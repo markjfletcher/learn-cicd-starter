@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
@@ -34,6 +36,14 @@ func main() {
 	if port == "" {
 		log.Fatal("PORT environment variable is not set")
 	}
+	// Validate PORT is a plain numeric value before it's ever logged or
+	// used to build the listen address, so untrusted env input can't be
+	// used for log injection or to smuggle extra characters into Addr.
+	portNum, err := strconv.Atoi(port)
+	if err != nil {
+		log.Fatalf("PORT environment variable is not a valid number: %v", err)
+	}
+	port = strconv.Itoa(portNum)
 
 	apiCfg := apiConfig{}
 
@@ -89,8 +99,9 @@ func main() {
 
 	router.Mount("/v1", v1Router)
 	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: router,
+		Addr:              ":" + port,
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	log.Printf("Serving on port: %s\n", port)
