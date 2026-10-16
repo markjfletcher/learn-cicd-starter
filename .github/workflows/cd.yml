@@ -11,6 +11,9 @@ jobs:
       contents: 'read'
       id-token: 'write'
 
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
     steps:
       - name: Check out code
         uses: actions/checkout@v6
@@ -22,6 +25,12 @@ jobs:
 
       - name: Build Container
         run: ./scripts/buildprod.sh
+
+      - name: Install Goosely
+        run: go install github.com/pressly/goose/v3/cmd/goose@latest
+
+      - name: Run Migrations
+        run: ./scripts/migrateup.sh
 
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
